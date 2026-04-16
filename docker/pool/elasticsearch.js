@@ -8,13 +8,13 @@ export default function({
     withKibana = false,
     volumesPath = {
         logsPath: './_data/logs',
-        configsPath: './_data/configs' 
+        configsPath: './_data/configs'
     },
     logsPath = null,
     configsPath = null
 }) {
 
-    if (logsPath && typeof logsPath === 'string' && logsPath.length > 0) volumesPath.logsPath = logsPath
+    if (logsPath   && typeof logsPath   === 'string' && logsPath.length   > 0) volumesPath.logsPath   = logsPath
     if (configsPath && typeof configsPath === 'string' && configsPath.length > 0) volumesPath.configsPath = configsPath
 
     const services = [
@@ -29,8 +29,9 @@ export default function({
                     `ES_JAVA_OPTS=-Xms${memoryLimit} -Xmx${memoryLimit}`
                 ],
                 ports: [`${port}:9200`, '9300:9300'],
-                volumes: [`${volumesPath.logsPath}/${name.toLocaleLowerCase()}:/usr/share/elasticsearch/data`],
-                ulimits: { memlock: { soft: -1, hard: -1 } },
+                volumes: [
+                    `${volumesPath.logsPath}/${name.toLowerCase()}:/usr/share/elasticsearch/data`
+                ],
                 restart: 'always'
             }
         }

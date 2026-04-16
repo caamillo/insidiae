@@ -9,32 +9,42 @@ export const sanitizePath = (path: string): string | undefined => {
 
 export class DockerSetup {
     projectName: string
-    services: Record<string, any>
-    version: string
-    path: string | undefined
+    services:    Record<string, any>
+    networks:    Record<string, any>
+    version:     string
+    path:        string | undefined
 
     constructor(path: string | null = null) {
         this.projectName = 'Insidiae'
-        this.services = {}
-        this.version = '3.8'
-        this.path = sanitizePath(path ?? '') ?? undefined
+        this.services    = {}
+        this.networks    = {}
+        this.version     = '3.8'
+        this.path        = sanitizePath(path ?? '') ?? undefined
         if (this.path && fs.existsSync(this.path)) this.parse(this.path)
     }
 
     parse(path?: string): void {
         const target = path || this.path
         if (!target) return
-        const file = fs.readFileSync(target, 'utf8')
+        const file    = fs.readFileSync(target, 'utf8')
         const compose = yaml.load(file)
         if (compose) Object.assign(this, compose)
     }
 
-    get(name: string) { return this.services?.[name] }
-    set(name: string, config: any) { this.services[name] = config }
+    get(name: string)                   { return this.services?.[name] }
+    set(name: string, config: any)      { this.services[name] = config }
+
+    // Register a top-level network. Defaults to a plain bridge
+    setNetwork(name: string, config: any = { driver: 'bridge' }): void {
+        this.networks[name] = config
+    }
 
     read() {
-        const { path, ...cleanData } = this as any
-        return cleanData
+        // Strip internal-only fields; keep networks only when non-empty
+        const { path, projectName, networks, ...rest } = this as any
+        return Object.keys(networks).length > 0
+            ? { ...rest, networks }
+            : rest
     }
 
     write(): void {

@@ -1,0 +1,61 @@
+projectName: Insidiae
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    volumes:
+      - ./_data/logs/elasticsearch:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    restart: always
+  elasticsearch_kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - '5601:5601'
+    depends_on:
+      - elasticsearch
+    restart: always
+  suricata:
+    image: jasonish/suricata:latest
+    container_name: suricata
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_NICE
+    volumes:
+      - ./_data/logs/elasticsearch/suricata:/var/log/suricata
+      - ./_data/configs/elasticsearch/suricata:/etc/suricata
+      - ./_data/configs/elasticsearch/suricata/rules:/var/lib/suricata/rules
+    environment:
+      - SURICATA_OPTIONS=-i eth1
+    restart: always
+    depends_on:
+      - elasticsearch
+  zeek:
+    image: zeek/zeek:latest
+    container_name: zeek
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./_data/logs/elasticsearch/zeek:/var/log/zeek
+    environment:
+      - ZEEK_INTERFACE=eth0
+    restart: always
+    depends_on:
+      - elasticsearch
+version: '3.8'
